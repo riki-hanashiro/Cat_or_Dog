@@ -1,0 +1,86 @@
+import sys ,os
+sys.path.append(os.pardir)
+from functions import *
+from gradient import numerical_gradient
+import numpy as np
+
+
+class TwoLayerNet:
+    def __init__( self, input_size, hidden_size, output_size, weight_init_std=0.01):
+        #重みの初期化
+        self.params={}
+        self.params["W1"]=weight_init_std * np.random.randn(input_size ,hidden_size)
+        self.params["b1"]=np.zeros(hidden_size)
+        self.params["W2"]=weight_init_std*np.random.randn(hidden_size,output_size)
+        self.params["b2"]=np.zeros(output_size)
+    def predict(self, x):
+        W1, W2 = self.params['W1'], self.params['W2']
+        b1, b2 = self.params['b1'], self.params['b2']
+
+        a1 = np.dot(x, W1) + b1
+        z1 = sigmoid(a1)
+        a2 = np.dot(z1, W2) + b2
+        y = softmax(a2)
+
+        return y
+
+    # x:入力データ, t:教師データ
+    def loss(self, x, t):
+        #predictでは入力と重み1,その結果と重み2の内積が正規化されて返される。
+        y = self.predict(x)
+        return cross_entropy_error(y, t)
+
+    def accuracy(self, x, t):
+        y = self.predict(x)
+        #入力と重みから得られた予測の中から一番値が大きい(＝確率が一番高いとされた)数を出力
+        y = np.argmax(y, axis=1)
+        # one-hot表記だから、一箇所だけ1でそれ以外0の配列
+        t = np.argmax(t, axis=1)
+        accuracy = np.sum(y == t) / float(x.shape[0])
+        return accuracy
+
+    # x:入力データ, t:教師データ
+    def numerical_gradient(self, x, t):
+        loss_W = lambda W: self.loss(x, t)
+        print("----------------------")
+        grads = {}
+        grads['W1'] = numerical_gradient(loss_W, self.params['W1'])   #再起呼び出しじゃない、他のソースファイルの関数
+        grads['b1'] = numerical_gradient(loss_W, self.params['b1'])   #クラス内の関数を使うときは関数の前にself.や、object名.をつけないといけない。
+        grads['W2'] = numerical_gradient(loss_W, self.params['W2'])
+        grads['b2'] = numerical_gradient(loss_W, self.params['b2'])
+
+        return grads
+
+    def gradient(self, x, t):
+        W1, W2 = self.params['W1'], self.params['W2']
+        b1, b2 = self.params['b1'], self.params['b2']
+        grads = {}
+
+        batch_num = x.shape[0]
+
+        # forward
+        a1 = np.dot(x, W1) + b1
+        z1 = sigmoid(a1)
+        a2 = np.dot(z1, W2) + b2
+        y = softmax(a2)
+
+        # backward
+        dy = (y - t) / batch_num
+        grads['W2'] = np.dot(z1.T, dy)
+        grads['b2'] = np.sum(dy, axis=0)
+
+        dz1 = np.dot(dy, W2.T)
+        da1 = sigmoid_grad(a1) * dz1
+        grads['W1'] = np.dot(x.T, da1)
+        grads['b1'] = np.sum(da1, axis=0)
+
+        return grads
+net=TwoLayerNet( input_size=10, hidden_size=10, output_size=10)
+print(net.params["W1"])
+
+x=np.random.rand(10,10)
+t=np.random.rand(10,10)
+print(t)
+
+grads=net.numerical_gradient(x,t)
+print(grads)
