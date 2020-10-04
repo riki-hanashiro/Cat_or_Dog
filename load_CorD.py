@@ -84,3 +84,5 @@ for i in range(0, 4):
     plt.imshow(X_train[i], cmap='gray')
 plt.show()
 """
+# テストようコメント
+#fghjkl

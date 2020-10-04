@@ -19,3 +19,4 @@ print("resized.shape = ",resized.shape)
 with open ("params.pkl","rb") as f:
     data = pickle.load(f)
     print(data["W1"])
+#aserty
